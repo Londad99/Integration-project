@@ -1,4 +1,4 @@
-package entity;
+package com.example.Integration.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

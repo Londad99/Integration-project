@@ -1,4 +1,4 @@
-package entity;
+package com.example.Integration.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,10 +27,6 @@ public class StudyPlan {
     @ManyToOne
     @JoinColumn(name = "curriculum_id")
     private Curriculum curriculum;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private java.util.Map<String, Object> grades;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

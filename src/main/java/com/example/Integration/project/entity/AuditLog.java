@@ -1,11 +1,10 @@
-package entity;
+package com.example.Integration.project.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
 import java.util.Map;

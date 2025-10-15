@@ -1,8 +1,8 @@
-package controller;
+package com.example.Integration.project.controller;
 
-import entity.Role;
+import com.example.Integration.project.entity.Role;
 import org.springframework.web.bind.annotation.*;
-import repository.RoleRepository;
+import com.example.Integration.project.repository.RoleRepository;
 
 import java.util.List;
 

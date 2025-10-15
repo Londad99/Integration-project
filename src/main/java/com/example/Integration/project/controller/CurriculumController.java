@@ -1,8 +1,8 @@
-package controller;
+package com.example.Integration.project.controller;
 
-import entity.Curriculum;
+import com.example.Integration.project.entity.Curriculum;
 import org.springframework.web.bind.annotation.*;
-import repository.CurriculumRepository;
+import com.example.Integration.project.repository.CurriculumRepository;
 
 import java.util.List;
 
