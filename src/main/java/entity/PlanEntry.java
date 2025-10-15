@@ -3,27 +3,28 @@ package entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "plan_entries")
+public class PlanEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @ManyToOne
+    @JoinColumn(name = "study_plan_id", nullable = false)
+    private StudyPlan studyPlan;
 
     @Column(nullable = false)
-    private boolean isVerified = false;
+    private LocalDate date;
 
-    @Column(nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    @OneToMany(mappedBy = "user")
-    private List<RoleAssignment> roleAssignments;
+    @OneToMany(mappedBy = "planEntry")
+    private List<PlanEntryTopic> topics;
 }

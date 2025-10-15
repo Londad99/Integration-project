@@ -9,21 +9,25 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "topics")
+public class Topic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
     @Column(nullable = false)
-    private boolean isVerified = false;
+    private String title;
+
+    private String description;
+    private String category;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private Topic parent;
+
+    @OneToMany(mappedBy = "parent")
+    private List<Topic> subtopics;
 
     @Column(nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
-
-    @OneToMany(mappedBy = "user")
-    private List<RoleAssignment> roleAssignments;
 }
