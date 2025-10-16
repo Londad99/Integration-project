@@ -15,12 +15,12 @@ public class RoleController {
         this.repo = repo;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Role> getAll() {
         return repo.findAll();
     }
 
-    @PostMapping
+    @PostMapping("/add")
     public Role create(@RequestBody Role r) {
         return repo.save(r);
     }

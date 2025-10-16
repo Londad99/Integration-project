@@ -28,9 +28,8 @@ public class StudyPlan {
     @JoinColumn(name = "curriculum_id")
     private Curriculum curriculum;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private java.util.Map<String, Object> schedule;
+    @Column(columnDefinition = "text")
+    private String schedule;
 
     private String notes;
 }

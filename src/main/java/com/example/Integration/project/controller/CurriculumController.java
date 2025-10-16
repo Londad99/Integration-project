@@ -15,12 +15,12 @@ public class CurriculumController {
         this.repo = repo;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Curriculum> getAll() {
         return repo.findAll();
     }
 
-    @PostMapping
+    @PostMapping("/add")
     public Curriculum create(@RequestBody Curriculum c) {
         return repo.save(c);
     }
