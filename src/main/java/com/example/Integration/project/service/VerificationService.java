@@ -13,21 +13,28 @@ public class VerificationService {
 
     private final Map<String, VerificationData> codes = new ConcurrentHashMap<>();
 
+    private String normalize(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
     public String generateCode(String email) {
+        String normalized = normalize(email);
         String code = String.format("%06d", (int)(Math.random() * 1_000_000));
-        codes.put(email, new VerificationData(code, OffsetDateTime.now().plusMinutes(5)));
+        codes.put(normalized, new VerificationData(code, OffsetDateTime.now().plusMinutes(5)));
         return code;
     }
 
     public boolean verifyCode(String email, String code) {
-        VerificationData data = codes.get(email);
+        String normalized = normalize(email);
+        VerificationData data = codes.get(normalized);
         if (data == null) return false;
         if (OffsetDateTime.now().isAfter(data.expiresAt)) {
-            codes.remove(email);
+            codes.remove(normalized);
             return false;
         }
         boolean valid = data.code.equals(code);
-        if (valid) codes.remove(email);
+        if (valid) codes.remove(normalized);
         return valid;
     }
 }
+

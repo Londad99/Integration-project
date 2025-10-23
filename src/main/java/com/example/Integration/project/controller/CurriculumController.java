@@ -24,5 +24,10 @@ public class CurriculumController {
     public Curriculum create(@RequestBody Curriculum c) {
         return repo.save(c);
     }
+
+    @PutMapping("/update")
+    public Curriculum update(@RequestBody Curriculum c) {
+        return repo.save(c);
+    }
 }
 
