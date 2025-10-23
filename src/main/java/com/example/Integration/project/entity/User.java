@@ -1,17 +1,20 @@
 package com.example.Integration.project.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,8 +22,11 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
+    
+    @Column
+    private String password;
 
     @Column(nullable = false)
     private boolean isVerified = false;
@@ -29,6 +35,15 @@ public class User {
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @OneToMany(mappedBy = "user")
-    @JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<RoleAssignment> roleAssignments;
+
+    @PrePersist
+    @PreUpdate
+    public void normalize() {
+        if (this.email != null) {
+            this.email = this.email.trim().toLowerCase();
+        }
+    }
 }
+
