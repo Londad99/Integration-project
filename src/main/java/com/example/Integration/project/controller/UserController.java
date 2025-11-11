@@ -18,6 +18,16 @@ public class UserController {
         this.svc = svc;
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAll() {
+        try {
+            Object users = svc.getAll();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al obtener usuarios");
+        }
+    }
+
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody Map<String,String> body) {
         String name = body.getOrDefault("name","");
