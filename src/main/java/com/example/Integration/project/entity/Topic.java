@@ -18,15 +18,15 @@ public class Topic {
     @Column(nullable = false)
     private String title;
 
-    private String description;
     private String category;
 
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Topic parent;
-
-    @OneToMany(mappedBy = "parent")
-    private List<Topic> subtopics;
+    @ElementCollection
+    @CollectionTable(
+            name = "topic_subtopics",
+            joinColumns = @JoinColumn(name = "topic_id")
+    )
+    @Column(name = "subtopic")
+    private List<String> subtopics;
 
     @Column(nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();

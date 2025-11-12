@@ -28,6 +28,21 @@ public class UserController {
         }
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody Map<String,String> body) {
+        String email = body.getOrDefault("email","");
+        String password = body.getOrDefault("password","");
+
+        String result = svc.login(email, password);
+        return switch (result) {
+            case "NOT_FOUND" -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            case "NOT_VERIFIED" -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no verificado");
+            case "INVALID_PASSWORD" -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña inválida");
+            case "SUCCESS" -> ResponseEntity.ok("Inicio de sesión exitoso");
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado");
+        };
+    }
+
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody Map<String,String> body) {
         String name = body.getOrDefault("name","");

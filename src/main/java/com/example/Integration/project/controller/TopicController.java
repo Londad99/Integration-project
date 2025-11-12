@@ -48,9 +48,7 @@ public class TopicController {
 
         Topic topic = existing.get();
         topic.setTitle(topicDetails.getTitle());
-        topic.setDescription(topicDetails.getDescription());
         topic.setCategory(topicDetails.getCategory());
-        topic.setParent(topicDetails.getParent());
 
         Topic updated = topicRepository.save(topic);
         return ResponseEntity.ok(updated);

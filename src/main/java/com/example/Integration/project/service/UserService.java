@@ -73,6 +73,18 @@ public class UserService {
     }
 
     @Transactional
+    public String login(String email, String password) {
+        String normalized = normalize(email);
+        User user = repo.findByEmailIgnoreCase(normalized).orElse(null);
+        if (user == null) return "NOT_FOUND";
+        if (!user.isVerified()) return "NOT_VERIFIED";
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            return "INVALID_PASSWORD";
+        }
+        return "SUCCESS";
+    }
+
+    @Transactional
     public String verify(String email, String code) {
         String normalized = normalize(email);
         boolean ok = verificationService.verifyCode(normalized, code);
