@@ -1,5 +1,6 @@
 package com.example.Integration.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
@@ -37,5 +38,6 @@ public class Curriculum {
     private String reviewMessage;
 
     @OneToMany(mappedBy = "curriculum")
+    @JsonManagedReference
     private List<CurriculumTopic> topics;
 }

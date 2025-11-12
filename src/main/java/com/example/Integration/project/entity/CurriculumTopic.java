@@ -1,5 +1,6 @@
 package com.example.Integration.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +16,7 @@ public class CurriculumTopic {
     @ManyToOne
     @MapsId("curriculumId")
     @JoinColumn(name = "curriculum_id")
+    @JsonBackReference
     private Curriculum curriculum;
 
     @ManyToOne
