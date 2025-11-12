@@ -132,4 +132,9 @@ public class UserService {
     public Object getAll() {
         return repo.findAll();
     }
+
+    public void delete(String userId) {
+        User u = repo.findById(Long.valueOf(userId)).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado: " + userId));
+        repo.delete(u);
+    }
 }
