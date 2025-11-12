@@ -1,65 +1,47 @@
 package com.example.Integration.project.controller;
 
+import com.example.Integration.project.dto.TopicDTO;
 import com.example.Integration.project.entity.Topic;
-import com.example.Integration.project.repository.TopicRepository;
+import com.example.Integration.project.service.TopicService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/topics")
-@CrossOrigin(origins = "*")
 public class TopicController {
+    private final TopicService service;
 
-    private final TopicRepository topicRepository;
-
-    public TopicController(TopicRepository topicRepository) {
-        this.topicRepository = topicRepository;
+    public TopicController(TopicService service) {
+        this.service = service;
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<Topic>> getAllTopics() {
-        List<Topic> topics = topicRepository.findAll();
-        return ResponseEntity.ok(topics);
+    @GetMapping
+    public List<Topic> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Topic> getTopicById(@PathVariable Long id) {
-        Optional<Topic> topic = topicRepository.findById(id);
-        return topic.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public Topic getOne(@PathVariable Long id) {
+        return service.findById(id);
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<Topic> createTopic(@RequestBody Topic topic) {
-        Topic savedTopic = topicRepository.save(topic);
-        return ResponseEntity.ok(savedTopic);
+    @PostMapping
+    public ResponseEntity<Topic> create(@RequestBody TopicDTO dto) {
+        Topic created = service.create(dto);
+        return ResponseEntity.created(URI.create("/topics/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Topic> updateTopic(@PathVariable Long id, @RequestBody Topic topicDetails) {
-        Optional<Topic> existing = topicRepository.findById(id);
-
-        if (existing.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Topic topic = existing.get();
-        topic.setTitle(topicDetails.getTitle());
-        topic.setCategory(topicDetails.getCategory());
-
-        Topic updated = topicRepository.save(topic);
-        return ResponseEntity.ok(updated);
+    public Topic update(@PathVariable Long id, @RequestBody TopicDTO dto) {
+        return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTopic(@PathVariable Long id) {
-        if (!topicRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        topicRepository.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }
