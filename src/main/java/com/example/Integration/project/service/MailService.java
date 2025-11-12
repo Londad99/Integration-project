@@ -33,5 +33,15 @@ public class MailService {
                 + "\nPor favor cámbiala en tu perfil lo antes posible.");
         mailSender.send(msg);
     }
+    //Envía la una contraseña provisional al ser cambiada por un administrador, incluyendo la nueva contraseña en el correo.
+    public void sendAdminChangedPassword(String to, String newPassword) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(to);
+        msg.setFrom(from);
+        msg.setSubject("Tu contraseña ha sido cambiada por un administrador");
+        msg.setText("Tu contraseña ha sido cambiada por un administrador. Tu nueva contraseña es: " + newPassword
+                + "\nPor favor cámbiala en tu perfil lo antes posible.");
+        mailSender.send(msg);
+    }
 }
 

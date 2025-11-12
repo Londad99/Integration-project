@@ -1,5 +1,6 @@
 package com.example.Integration.project.controller;
 
+import com.example.Integration.project.service.MailService;
 import com.example.Integration.project.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,11 @@ import java.util.NoSuchElementException;
 public class UserController {
 
     private final UserService svc;
+    private final MailService mailService;
 
-    public UserController(UserService svc) {
+    public UserController(UserService svc, MailService mailService) {
         this.svc = svc;
+        this.mailService = mailService;
     }
 
     @GetMapping("/all")
@@ -76,21 +79,36 @@ public class UserController {
         String provisional = body.getOrDefault("provisional","");
         String newPassword = body.getOrDefault("newPassword","");
 
-        if (newPassword.length() < 6) return ResponseEntity.badRequest().body("La nueva contraseña debe tener al menos 6 caracteres.");
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("La nueva contraseña debe tener al menos 6 caracteres.");
+        }
 
         String result = svc.setPassword(email, provisional, newPassword);
-        return switch (result) {
-            case "NOT_FOUND" -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
-            case "PROVISIONAL_INVALID" -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña provisional inválida");
-            case "PASSWORD_UPDATED" -> ResponseEntity.ok("Contraseña actualizada correctamente");
-            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado");
-        };
+
+        switch (result) {
+            case "NOT_FOUND":
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            case "PROVISIONAL_INVALID":
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña provisional inválida");
+            case "SUCCESS":
+            case "PASSWORD_UPDATED":
+                try {
+                    mailService.sendAdminChangedPassword(email, newPassword);
+                    return ResponseEntity.ok("Contraseña cambiada exitosamente");
+                } catch (Exception e) {
+                    return ResponseEntity.ok("Contraseña actualizada, pero no se pudo enviar el correo.");
+                }
+            default:
+                System.out.println("svc.setPassword retornó valor inesperado: " + result);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado");
+        }
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<String> deleteUser(@PathVariable String userId) {
+
+    @DeleteMapping("/{userId:[0-9]+}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
         try {
-            svc.delete(userId);
+            svc.delete(String.valueOf(userId));
             return ResponseEntity.ok("Usuario eliminado");
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
