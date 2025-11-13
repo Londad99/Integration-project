@@ -73,6 +73,32 @@ public class UserController {
         };
     }
 
+    // Endpoint para que el usuario cambie su contraseña provisional por una nueva
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody Map<String,String> body) {
+        String email = body.getOrDefault("email","");
+        String provisional = body.getOrDefault("provisional","");
+        String newPassword = body.getOrDefault("newPassword","");
+
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("La nueva contraseña debe tener al menos 6 caracteres.");
+        }
+
+        String result = svc.changePassword(email, provisional, newPassword);
+
+        switch (result) {
+            case "NOT_FOUND":
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            case "PROVISIONAL_INVALID":
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Contraseña provisional inválida");
+            case "SUCCESS":
+                return ResponseEntity.ok("Contraseña cambiada exitosamente");
+            default:
+                System.out.println("svc.changePassword retornó valor inesperado: " + result);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado");
+        }
+    }
+
     @PostMapping("/set-password")
     public ResponseEntity<String> setPassword(@RequestBody Map<String,String> body) {
         String email = body.getOrDefault("email","");
