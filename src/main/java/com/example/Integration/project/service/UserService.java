@@ -137,4 +137,18 @@ public class UserService {
         User u = repo.findById(Long.valueOf(userId)).orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado: " + userId));
         repo.delete(u);
     }
+
+    public String changePassword(String email, String provisional, String newPassword) {
+        String normalized = normalize(email);
+        User user = repo.findByEmailIgnoreCase(normalized).orElse(null);
+        if (user == null) return "NOT_FOUND";
+
+        if (!passwordEncoder.matches(provisional, user.getPassword())) {
+            return "PROVISIONAL_INVALID";
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        repo.save(user);
+        return "SUCCESS";
+    }
 }

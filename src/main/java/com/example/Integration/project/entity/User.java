@@ -1,5 +1,6 @@
 package com.example.Integration.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,8 +25,8 @@ public class User {
 
     @Column(nullable = false)
     private String email;
-    
-    @Column
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column(nullable = false)
