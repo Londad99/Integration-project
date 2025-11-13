@@ -9,6 +9,7 @@ public class StudyPlanDTO {
     private String adminNumber;
     private String schedule;
     private String notes;
+    private String grades;
     private Long createdById;
     private Long curriculumId;
     private List<PlanEntryDTO> entries;

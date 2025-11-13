@@ -57,9 +57,11 @@ public class StudyPlanService {
         plan.setAdminNumber(dto.getAdminNumber());
         plan.setSchedule(dto.getSchedule());
         plan.setNotes(dto.getNotes());
+        plan.setGrades(dto.getGrades());
         plan.setCreatedAt(OffsetDateTime.now());
         plan.setCreatedBy(creator);
         plan.setCurriculum(curriculum);
+
 
         StudyPlan savedPlan = studyPlanRepo.save(plan);
 
@@ -98,4 +100,40 @@ public class StudyPlanService {
     public StudyPlan save(StudyPlan plan) {
         return studyPlanRepo.save(plan);
     }
+
+    public StudyPlanResponseDTO toResponseDTO(StudyPlan plan) {
+        StudyPlanResponseDTO dto = new StudyPlanResponseDTO();
+        dto.setId(plan.getId());
+        dto.setTitle(plan.getTitle());
+        dto.setSchedule(plan.getSchedule());
+        dto.setNotes(plan.getNotes());
+        dto.setAdminNumber(plan.getAdminNumber());
+        dto.setCurriculumTitle(plan.getCurriculum().getTitle());
+
+        if (plan.getEntries() != null) {
+            dto.setEntries(
+                    plan.getEntries().stream().map(entry -> {
+                        StudyPlanResponseDTO.EntryView ev = new StudyPlanResponseDTO.EntryView();
+                        ev.setDate(entry.getDate().toString());
+
+                        if (entry.getTopics() != null) {
+                            ev.setTopics(
+                                    entry.getTopics().stream().map(pet -> {
+                                        StudyPlanResponseDTO.TopicView tv = new StudyPlanResponseDTO.TopicView();
+                                        tv.setTopicId(pet.getTopic().getId());
+                                        tv.setTitle(pet.getTopic().getTitle());
+                                        tv.setDescription(pet.getDescription());
+                                        return tv;
+                                    }).toList()
+                            );
+                        }
+
+                        return ev;
+                    }).toList()
+            );
+        }
+
+        return dto;
+    }
+
 }

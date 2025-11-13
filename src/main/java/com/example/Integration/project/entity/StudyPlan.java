@@ -1,9 +1,12 @@
 package com.example.Integration.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +18,8 @@ public class StudyPlan {
     private Long id;
 
     private String title;
+
+    private String grades;
 
     @ManyToOne
     @JoinColumn(name = "created_by")
@@ -32,4 +37,8 @@ public class StudyPlan {
     private String schedule;
 
     private String notes;
+
+    @OneToMany(mappedBy = "studyPlan", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference("studyPlan-entries")
+    private List<PlanEntry> entries;
 }
