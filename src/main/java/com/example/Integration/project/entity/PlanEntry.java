@@ -1,5 +1,7 @@
 package com.example.Integration.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
@@ -18,6 +20,7 @@ public class PlanEntry {
 
     @ManyToOne
     @JoinColumn(name = "study_plan_id", nullable = false)
+    @JsonBackReference("studyPlan-entries")
     private StudyPlan studyPlan;
 
     @Column(nullable = false)
@@ -26,5 +29,6 @@ public class PlanEntry {
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @OneToMany(mappedBy = "planEntry")
+    @JsonManagedReference("planEntry-topics")
     private List<PlanEntryTopic> topics;
 }
