@@ -13,4 +13,7 @@ public class StudyPlanDTO {
     private Long createdById;
     private Long curriculumId;
     private List<PlanEntryDTO> entries;
+
+    public void setId(Long id) {
+    }
 }

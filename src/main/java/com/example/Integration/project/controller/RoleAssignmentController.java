@@ -40,4 +40,16 @@ public class RoleAssignmentController {
 
         return repo.save(ra);
     }
+
+    @PutMapping("/update/{id}" )
+    public RoleAssignment update(@PathVariable Long id, @RequestBody RoleAssignment raDetails) {
+        RoleAssignment ra = repo.findById(id).orElseThrow();
+        User user = userRepo.findById(raDetails.getUser().getId()).orElseThrow();
+        Role role = roleRepo.findById(raDetails.getRole().getId()).orElseThrow();
+
+        ra.setUser(user);
+        ra.setRole(role);
+        return repo.save(ra);
+    }
+
 }

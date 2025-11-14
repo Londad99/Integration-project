@@ -136,4 +136,13 @@ public class StudyPlanService {
         return dto;
     }
 
+    public StudyPlan update(Long id, StudyPlanDTO dto) {
+        StudyPlan plan = getById(id);
+        if (dto.getTitle() != null) plan.setTitle(dto.getTitle());
+        if (dto.getAdminNumber() != null) plan.setAdminNumber(dto.getAdminNumber());
+        if (dto.getSchedule() != null) plan.setSchedule(dto.getSchedule());
+        if (dto.getNotes() != null) plan.setNotes(dto.getNotes());
+        if (dto.getGrades() != null) plan.setGrades(dto.getGrades());
+        return studyPlanRepo.save(plan);
+    }
 }

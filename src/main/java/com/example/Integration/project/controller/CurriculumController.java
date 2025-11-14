@@ -34,6 +34,13 @@ public class CurriculumController {
         return ResponseEntity.created(URI.create("/curriculums/" + created.getId())).body(created);
     }
 
+    //set createdBy to a curriculum
+    @PutMapping("/{id}/creator/{userId}")
+    public Curriculum setCreator(@PathVariable Long id, @PathVariable Long userId) {
+        return service.setCreatedBy(id, userId);
+    }
+
+
     @PutMapping("/update/{id}")
     public Curriculum update(@PathVariable Long id, @RequestBody CurriculumDTO dto) {
         return service.update(id, dto);

@@ -44,4 +44,9 @@ public class StudyPlanController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @PutMapping("/{id}")
+    public StudyPlan update(@PathVariable Long id, @RequestBody StudyPlanDTO dto) {
+        return service.update(id, dto);
+    }
 }
