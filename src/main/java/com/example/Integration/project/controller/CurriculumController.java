@@ -5,6 +5,8 @@ import com.example.Integration.project.entity.Curriculum;
 import com.example.Integration.project.service.CurriculumService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.net.URI;
 import java.util.List;
@@ -44,6 +46,24 @@ public class CurriculumController {
     @PutMapping("/update/{id}")
     public Curriculum update(@PathVariable Long id, @RequestBody CurriculumDTO dto) {
         return service.update(id, dto);
+    }
+
+    // Nuevo endpoint: set/reset review info
+    // Se acepta reviewerId como String para permitir que el front mande 'null' o lo omita.
+    @PutMapping("/{id}/review")
+    public Curriculum setReview(@PathVariable Long id,
+                                @RequestParam(required = false) String reviewerId,
+                                @RequestParam(required = false) String reviewMessage) {
+        Long reviewerIdLong = null;
+        if (reviewerId != null && !reviewerId.isBlank() && !"null".equalsIgnoreCase(reviewerId)) {
+            try {
+                reviewerIdLong = Long.parseLong(reviewerId);
+            } catch (NumberFormatException ex) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "reviewerId must be a number or null");
+            }
+        }
+        // Nota: si reviewerId es null (o 'null'), llamamos a setReview con reviewerId null para limpiar review info.
+        return service.setReview(id, reviewerIdLong, reviewMessage);
     }
 
     @PostMapping("/{curriculumId}/topics/{topicId}")

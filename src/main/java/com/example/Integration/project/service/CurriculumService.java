@@ -13,6 +13,7 @@ import com.example.Integration.project.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,6 +145,30 @@ public class CurriculumService {
         Curriculum fresh = curriculumRepo.findById(saved.getId()).orElse(saved);
         log.debug("After re-fetch createdBy={}", fresh.getCreatedBy() != null ? fresh.getCreatedBy().getId() : null);
         return fresh;
+    }
+
+    @Transactional
+    public Curriculum setReview(Long id, Long reviewerId, String reviewMessage) {
+        log.debug("setReview START id={}, reviewerId={}, reviewMessage={}", id, reviewerId, reviewMessage);
+        Curriculum c = findById(id);
+
+        if (reviewerId == null) {
+            // limpiar review
+            c.setReviewedBy(null);
+            c.setReviewedAt(null);
+            c.setReviewMessage(null);
+        } else {
+            User reviewer = userRepo.findById(reviewerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario revisor no encontrado: " + reviewerId));
+            c.setReviewedBy(reviewer);
+            c.setReviewedAt(OffsetDateTime.now());
+            // reviewMessage puede ser null -> limpiar, o no -> setear
+            c.setReviewMessage(reviewMessage);
+        }
+
+        Curriculum saved = curriculumRepo.saveAndFlush(c);
+        // re-fetch para evitar proxies nulos y devolver estado consistente
+        return curriculumRepo.findById(saved.getId()).orElse(saved);
     }
 
 }

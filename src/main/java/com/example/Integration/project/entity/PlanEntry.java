@@ -28,7 +28,7 @@ public class PlanEntry {
 
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    @OneToMany(mappedBy = "planEntry")
+    @OneToMany(mappedBy = "planEntry", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("planEntry-topics")
     private List<PlanEntryTopic> topics;
 }

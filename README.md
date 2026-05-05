@@ -4,164 +4,220 @@ Proyecto Spring Boot para gestión de planes de estudio (Study Plans, Curriculum
 
 Fecha: 2025-11-14
 
-## Resumen
+---
 
-Aplicación backend en Java (Spring Boot, JPA/Hibernate, Gradle) que maneja usuarios, currículos, topics y planes de estudio. Proporciona API REST para crear/leer/actualizar/eliminar recursos y funciones administrativas (cambio de contraseña, revisión de currículums, envío de correos).
+## Resumen rápido
 
-## Stack tecnológico
+Este README explica cómo funciona la autenticación por JWT en este proyecto, cómo realizar el login desde el frontend y ejemplos prácticos (curl/PowerShell y axios). También resume endpoints importantes relacionados con StudyPlans y Curriculums y muestra ejemplos de payloads para crear/actualizar planes con entries (fecha - topic).
 
-- Java 17+ (o compatible)
-- Spring Boot
-- Spring Data JPA (Hibernate)
-- Gradle (wrapper incluido)
-- Base de datos relacional (configurable mediante `application.properties`)
-- Jackson para JSON
 
-## Estructura principal
+## 1) Conceptos clave
 
-- `src/main/java/com/example/Integration/project` - código fuente
-- `src/main/resources/application.properties` - configuración
-- `build.gradle` / `gradlew` - build
+- El backend usa JWT (JSON Web Tokens) para autenticar requests de cliente. El token se firma con un secreto (HS256) y contiene el `subject` (email) y una lista de `roles` como claim.
+- El token de acceso es *stateless*: el servidor no lo guarda; valida la firma y la expiración en cada request.
+- Para mejorar seguridad en producción se recomienda usar tokens de corta vida y refresh tokens con rotación/almacenamiento seguro (opcional, no implementado por defecto aquí).
 
-## Requisitos previos
 
-- JDK 17+
-- Gradle wrapper (incluido)
-- Base de datos (Postgres/MySQL/otros) y credenciales configuradas en `application.properties`
+## 2) Variables de entorno / configuración JWT
 
-## Variables de entorno / Configuración
+El proyecto carga propiedades de JWT desde `application.properties` usando el prefijo `jwt`. Debes definir al menos la siguiente variable de entorno (o propiedad):
 
-Ajusta `src/main/resources/application.properties` con parámetros de conexión a BD y SMTP. Ejemplos:
+- `jwt.secret` (requerido) — secreto largo para firmar HS256. Ejemplo (no poner esto en el repo):
+  - PowerShell (temporal en la sesión):
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/dbname
-spring.datasource.username=user
-spring.datasource.password=secret
-spring.jpa.hibernate.ddl-auto=update
-
-# SMTP (ejemplo)
-spring.mail.host=smtp.example.com
-spring.mail.port=587
-spring.mail.username=email@example.com
-spring.mail.password=emailpassword
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
+```powershell
+$env:JWT_SECRET = "una_clave_muy_larga_y_segura_que_no_debes_committear"
+# o lanzar la app con: java -Djwt.secret="..." -jar ...
 ```
 
-## Ejecutar la aplicación (desarrollo)
+Opcionalmente puedes definir en `application.properties` (no recomendado en repositorios públicos):
 
-Desde la raíz del proyecto, en Windows Powershell:
+```properties
+jwt.secret=${JWT_SECRET}
+jwt.expiration-seconds=900
+jwt.issuer=integration-project
+```
 
+- `jwt.expiration-seconds` por defecto es 900 (15 minutos). Ajusta según tus necesidades.
+
+
+## 3) Endpoints de autenticación
+
+- POST /auth/login
+  - Request (JSON):
+    {
+      "email": "usuario@example.com",
+      "password": "secreto"
+    }
+  - Response (200):
+    {
+      "accessToken": "<JWT>",
+      "tokenType": "Bearer",
+      "expiresIn": 900,
+      "roles": ["ROLE_TEACHER"]
+    }
+  - Uso: el frontend guarda el token (preferiblemente en memoria) y lo envía en el header Authorization en requests protegidos.
+
+- Nota: por ahora no hay endpoint `/auth/refresh` implementado por defecto en este repo; si necesitas refresh tokens podemos implementarlos (recomiendo guardarlos hashed en BD y ofrecer `/auth/refresh`).
+
+
+## 4) Cómo enviar el token desde el frontend
+
+En cada request a endpoints protegidos hay que enviar el header:
+
+Authorization: Bearer <accessToken>
+
+Ejemplo con axios (JS/TS):
+
+```ts
+// usando el helper api existente (axios instance)
+api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+// o para una llamada puntual
+await api.put(`/curriculums/${id}/review`, null, { params: { reviewerId: 12, reviewMessage: 'OK' }, headers: { Authorization: `Bearer ${accessToken}` } });
+```
+
+Ejemplo con curl en PowerShell:
+
+```powershell
+curl.exe -X GET "http://localhost:8080/study-plans/13" -H "Authorization: Bearer eyJhbGciOi..." -H "Content-Type: application/json"
+```
+
+
+## 5) Endpoints relevantes (resumen)
+
+- POST /auth/login — login y obtención de JWT.
+- GET /study-plans/{id} — obtener plan de estudio (protegido).
+- POST /study-plans/create — crear plan con entries (no protegido si tu configuración lo permite; por defecto todas las rutas distintas a `/auth/**` requieren token).
+- PUT /study-plans/{id} — actualizar plan y sus entries/topics (síncrono con payload mostrado abajo).
+- PUT /curriculums/{id}/review — setear o limpiar información de review (reviewedBy, reviewedAt, reviewMessage). Acepta params: `reviewerId` y `reviewMessage`.
+
+
+## 6) Payloads: crear/actualizar StudyPlan con entries (fecha-topic)
+
+Se usa `StudyPlanDTO` en el backend. Las propiedades principales para crear/actualizar con entries son:
+
+- title, adminNumber, schedule, notes, grades
+- createdById (solo en creación)
+- curriculumId (solo en creación)
+- entries: array de objetos { date: "YYYY-MM-DD", topics: [ { topicId: number, description: string } ] }
+
+Ejemplo completo para crear (POST /study-plans/create):
+
+```json
+{
+  "title": "Plan Noviembre",
+  "adminNumber": "123",
+  "schedule": "Lunes - Martes...",
+  "notes": "Observaciones",
+  "grades": "1º-2º",
+  "createdById": 5,
+  "curriculumId": 3,
+  "entries": [
+    {
+      "date": "2025-11-20",
+      "topics": [
+        { "topicId": 7, "description": "Intro a X" },
+        { "topicId": 9, "description": "Ejercicios" }
+      ]
+    },
+    {
+      "date": "2025-11-27",
+      "topics": [
+        { "topicId": 8, "description": "Avanzado" }
+      ]
+    }
+  ]
+}
+```
+
+Ejemplo para actualizar (PUT /study-plans/{id}): mismo DTO. El backend hace "sync" por `date` y `topicId`:
+
+- Si incluyes una entrada con la misma `date`, actualizará/añadirá topics según `topicId`.
+- Si no incluyes un `topicId` que existía en la DB para esa entrada, el servicio lo elimina (orphanRemoval).
+- Si quitas completamente una `date` del array, esa entrada se eliminará.
+
+Ejemplo parcial de update:
+
+```json
+{
+  "title": "Plan Noviembre - v2",
+  "entries": [
+    {
+      "date": "2025-11-20",
+      "topics": [
+        { "topicId": 7, "description": "Intro actualizada" },
+        { "topicId": 10, "description": "Nuevo topic" }
+      ]
+    }
+  ]
+}
+```
+
+
+## 7) Endpoint para review de Curriculum — uso desde frontend
+
+Ruta: PUT `/curriculums/{id}/review`
+- Parámetros query (opcional): `reviewerId` y `reviewMessage`.
+- Comportamiento:
+  - Si `reviewerId` es un número -> se registra reviewedBy=User(reviewerId), reviewedAt=now(), reviewMessage (puede ser null).
+  - Si `reviewerId` es `null` (o se omite), el servicio limpia reviewedBy/reviewedAt/reviewMessage.
+
+Ejemplos axios:
+
+// poner review
+```ts
+await api.put(`curriculums/${id}/review`, null, { params: { reviewerId: 12, reviewMessage: 'Aprobado' } });
+```
+
+// limpiar review
+```ts
+await api.put(`curriculums/${id}/review`, null, { params: { reviewerId: null } });
+```
+
+Nota: el controller acepta el `reviewerId` como string y convierte la cadena "null" en null para facilitar llamadas desde frontend.
+
+
+## 8) Errores comunes y debugging
+
+- Error: "A collection with orphan deletion was no longer referenced by the owning entity instance"
+  - Causa: manipulación inapropiada de listas gestionadas por JPA (reemplazar la referencia de la lista en vez de mutarla). Solución: remover/añadir elementos en la colección que JPA está gestionando; el proyecto ya aplica esta corrección en `StudyPlanService.update` y usa `orphanRemoval=true` para `PlanEntry.topics`.
+
+- Si ves que al actualizar un StudyPlan se borran todas las clases, asegúrate de que tu payload `entries` no esté vacío accidentalmente — si envías `entries: []` el servicio interpretará que no quieres ninguna entrada y las eliminará.
+
+
+## 9) Recomendaciones de seguridad
+
+- No comites `jwt.secret` ni contraseñas en el repositorio. Usar variables de entorno o servicios de secretos.
+- Usar HTTPS en producción.
+- Mantener `accessToken` de corta vida (ej. 15m). Implementar refresh tokens si necesitas sesiones más largas.
+- Guardar refresh tokens en HttpOnly cookies o en la BD hashed con rotación.
+- Para rutas sensibles, limitar por roles (ROLE_ADMIN, ROLE_TEACHER, ROLE_SECRETARY). Puedes añadir reglas en `SecurityConfig`.
+
+
+## 10) Cómo probar manualmente (quick steps)
+
+1. Establece variable de entorno JWT_SECRET y configura DB en `application.properties`.
+2. Inicia la app:
 ```powershell
 ./gradlew bootRun
 ```
-
-O para construir la JAR y ejecutarlo:
-
+3. Login (PowerShell + curl):
 ```powershell
-./gradlew clean build
-java -jar build/libs/Integration-project-0.0.1-SNAPSHOT.jar
+$body = '{"email":"admin@example.com","password":"secreto"}'
+curl.exe -X POST "http://localhost:8080/auth/login" -H "Content-Type: application/json" -d $body
 ```
-
-## Tests
-
-Ejecutar tests unitarios/integración:
-
+4. Copia `accessToken` de la respuesta y haz una petición protegida:
 ```powershell
-./gradlew test
+curl.exe -X GET "http://localhost:8080/study-plans/13" -H "Authorization: Bearer <accessToken>"
 ```
 
-Reporte de cobertura y otros artefactos de build aparecerán en `build/reports`.
+## 11) Siguientes pasos recomendados
 
-## Endpoints importantes (resumen)
-
-- POST `/users/set-password` - cambiar contraseña provisional. Respuestas:
-  - 200 OK: contraseña cambiada (si el envío de correo falla, devuelve 200 con mensaje informando que no se pudo notificar)
-  - 400/401/404/500 según caso
-
-- GET `/study-plans` - lista de planes (por defecto devuelve entidades "raw").
-- GET `/study-plans/all/raw` - endpoint que devuelve la representación completa "raw" (cuidado con serialización recursiva).
-
-Nota: revisa los controladores en `src/main/java/com/example/Integration/project/controller` para rutas exactas y parámetros.
-
-## Seguridad: no exponer contraseñas accidentalmente
-
-Observación importante: en respuestas JSON no se debe enviar nunca el campo `password`. Hay dos formas seguras y recomendadas de evitarlo:
-
-1) Marcar la propiedad como solo escritura en la entidad User para Jackson:
-
-```java
-@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-private String password;
-```
-
-Esto permite recibir `password` en peticiones pero evita que Jackson lo serialice en respuestas.
-
-2) Usar DTOs para devolver solo los campos necesarios (más control y recomendado para APIs públicas).
-
-Actualmente el proyecto incluye la solución 1 en ejemplos; verifica `src/main/java/com/example/Integration/project/entity/User.java`.
-
-## Problema de JSON infinito (recursión) y cómo evitarlo
-
-Si al consumir endpoints "raw" obtienes una respuesta extremadamente larga o que parece entrar en recursión, la causa habitual es que existen relaciones JPA bidireccionales (por ejemplo `StudyPlan` -> `Curriculum` -> `Topic` -> `PlanEntry` -> `StudyPlan`) y Jackson sigue navegando las referencias.
-
-Opciones para resolverlo sin usar DTOs (manteniendo endpoints "raw"):
-
-- Usar `@JsonManagedReference` en el lado padre y `@JsonBackReference` en el lado hijo para romper la recursión.
-
-- Usar `@JsonIgnore` o `@JsonIgnoreProperties` en la propiedad que no quieras serializar. Por ejemplo, si en `StudyPlan` sólo quieres serializar el título del curriculum y no todo su contenido, añade en la entidad `StudyPlan`:
-
-```java
-@JsonIgnoreProperties({"topics", "createdBy", "reviewedBy", "status"})
-private Curriculum curriculum;
-```
-
-Esto hará que cuando se serialice `StudyPlan`, el `curriculum` incluya solo los campos no ignorados (por ejemplo `id`, `title`, `level`) y evitará enviar listas enormes de `topics`.
-
-- Alternativa más robusta: crear un `@JsonView` o DTO para representar el nivel de detalle.
-
-Recomendación rápida para el caso "mostrar solo el nombre del curriculum":
-
-- En `StudyPlan` añade `@JsonIgnoreProperties({"topics","createdBy","reviewedBy","reviewMessage","status","createdAt"})` sobre la propiedad `curriculum`. Así solo se enviarán los campos restantes (habitualmente `id`, `title`, `level`).
-
-Ejemplo:
-
-```java
-@ManyToOne
-@JoinColumn(name = "curriculum_id")
-@JsonIgnoreProperties({"topics","createdBy","reviewedBy","reviewMessage","status","createdAt"})
-private Curriculum curriculum;
-```
-
-## Buenas prácticas y notas de depuración
-
-- Para desarrollo, preferir `fetch = FetchType.LAZY` en colecciones grandes para evitar cargar datos innecesarios.
-- Para endpoints que devuelven colecciones grandes, paginar y devolver solo campos necesarios.
-- Registrar (log) respuestas de servicios externos (p.ej. SMTP) para identificar fallos de envío sin alterar el flujo de negocio.
-- Evitar exponer entidades JPA directamente en APIs públicas; los DTOs ofrecen seguridad y estabilidad del contrato.
-
-## Contribuir
-
-1. Abre un issue describiendo el cambio o bug.
-2. Crea una rama con prefijo `feature/` o `fix/`.
-3. Añade tests si cambias lógica.
-4. Haz pull request con descripción clara.
-
-## Troubleshooting rápido
-
-- Si al cambiar contraseña el endpoint retorna "Error inesperado" pero la contraseña se actualizó, revisa que el servicio devuelva exactamente `"SUCCESS"` (o usa `equalsIgnoreCase`) y que la lógica de envío de correo maneje excepciones devolviendo 200 cuando proceda.
-- Si ves `For input string: "all"` al convertir Long, revisa controladores que reciban path variables/params numéricos y que no estén recibiendo el string literal `all`. Por ejemplo, asegúrate de tener rutas separadas `/resource/all` vs `/resource/{id}` o validar si `id` es numérico antes de convertir.
-
-## Licencia
-
-Añade aquí la licencia del proyecto si aplica (MIT, Apache 2.0, etc.).
+- Implementar refresh tokens con endpoint `/auth/refresh` y almacenamiento de refresh tokens en BD (hashed + expiración + rotación).
+- Añadir endpoints de registro y administración de roles (admin-only).
+- Añadir tests de integración para `StudyPlanService.update` (casos: añadir topic, actualizar descripción, eliminar topic/entry).
+- Añadir ejemplos de Postman / colección OpenAPI.
 
 ---
 
-Si quieres, puedo:
-
-- Generar ejemplos concretos de `curl` para cada endpoint.
-- Añadir un archivo `CONTRIBUTING.md` o plantillas de `ISSUE/PR`.
-- Implementar las anotaciones `@JsonIgnoreProperties` necesarias en las entidades y ejecutar tests.
-
-Dime cuál de estas tareas quieres que haga a continuación.
+Fin del README.
